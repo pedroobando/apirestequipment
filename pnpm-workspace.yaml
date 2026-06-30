@@ -1,0 +1,5 @@
+allowBuilds:
+  unrs-resolver: true
+  "@scarf/scarf": true
+  bcrypt: true
+  esbuild: true
