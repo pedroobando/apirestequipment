@@ -93,7 +93,7 @@ cp .env.template .env
 
 | Variable | Descripción | Default |
 |----------|-------------|---------|
-| `DATABASE_URL` | URL de conexión a PostgreSQL | `postgresql://equipment:equipment@localhost:5433/apirestequipment` |
+| `DATABASE_URL` | URL de conexión a PostgreSQL | `postgresql://adminEq:***@localhost:5434/equipment` |
 | `JWT_SECRET` | Secreto para firmar JWT (obligatorio en producción) | `change-me-in-production` |
 | `JWT_EXPIRES_IN` | Vida del access token | `7d` (sobrescrito a `15m` en `auth.module.ts`) |
 | `GOOGLE_CLIENT_ID` | Client ID de Google OAuth (opcional) | vacío |
