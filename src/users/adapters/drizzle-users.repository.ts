@@ -2,10 +2,13 @@ import { Inject, Injectable, Logger } from '@nestjs/common';
 import { eq, sql } from 'drizzle-orm';
 import { DATABASE_CONNECTION } from 'src/database/database.provider';
 import { users } from '../schema/users.schema';
-import { CreateUserDto } from '../dto/create-user.dto';
-import { UpdateUserDto } from '../dto/update-user.dto';
 import { IUser } from '../interfaces/user.interface';
-import { IUsersRepository, DbClient } from '../ports/users.repository';
+import {
+  IUsersRepository,
+  DbClient,
+  CreateUserData,
+  UpdateUserData,
+} from '../ports/users.repository';
 import { tryCatch } from 'src/common/utils/try-catch';
 import { mapDatabaseError } from 'src/common/utils/map-database-error';
 import { PaginationDto } from 'src/common/dto/pagination.dto';
@@ -103,7 +106,7 @@ export class DrizzleUsersRepository implements IUsersRepository {
   }
 
   async create(
-    data: CreateUserDto,
+    data: CreateUserData,
     client: DbClient = this.db,
   ): Promise<IUser> {
     const [result, error] = await tryCatch(
@@ -118,7 +121,7 @@ export class DrizzleUsersRepository implements IUsersRepository {
     return result[0]!;
   }
 
-  async update(id: string, data: UpdateUserDto): Promise<IUser> {
+  async update(id: string, data: UpdateUserData): Promise<IUser> {
     const [result, error] = await tryCatch(
       this.db
         .update(users)

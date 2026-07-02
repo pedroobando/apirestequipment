@@ -218,7 +218,7 @@ describe('UsersService', () => {
 
       expect(mockRepository.update).toHaveBeenCalledWith(
         mockUser.id,
-        expect.objectContaining({ password: 'hashed' }),
+        expect.objectContaining({ passwordHash: 'hashed' }),
       );
     });
 

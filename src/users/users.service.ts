@@ -6,7 +6,10 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
-import { USERS_REPOSITORY_TOKEN } from './ports/users.repository';
+import {
+  USERS_REPOSITORY_TOKEN,
+  UpdateUserData,
+} from './ports/users.repository';
 import type { IUsersRepository } from './ports/users.repository';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -85,7 +88,7 @@ export class UsersService {
     const [user, error] = await tryCatch(
       this.usersRepository.create({
         ...data,
-        password: passwordHash,
+        passwordHash: passwordHash,
       }),
     );
 
@@ -113,11 +116,11 @@ export class UsersService {
       delete data.role;
     }
 
-    let updateData = { ...data };
+    let updateData: UpdateUserData = { ...data };
 
     if (data.password) {
       const passwordHash = await bcrypt.hash(data.password, 10);
-      updateData = { ...updateData, password: passwordHash };
+      updateData = { ...updateData, passwordHash: passwordHash };
     }
 
     const [updatedUser, error] = await tryCatch(
@@ -135,11 +138,11 @@ export class UsersService {
   async adminUpdate(id: string, data: UpdateUserDto): Promise<UserResponseDto> {
     await this.findById(id);
 
-    let updateData = { ...data };
+    let updateData: UpdateUserData = { ...data };
 
     if (data.password) {
       const passwordHash = await bcrypt.hash(data.password, 10);
-      updateData = { ...updateData, password: passwordHash };
+      updateData = { ...updateData, passwordHash: passwordHash };
     }
 
     const [updatedUser, error] = await tryCatch(
