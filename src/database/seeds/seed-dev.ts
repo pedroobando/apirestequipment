@@ -80,10 +80,19 @@ async function main() {
       .values(seedEquipmentTypes.map((name) => ({ name })));
 
     const passwordHash = await bcrypt.hash('password123', 10);
+    const adminPasswordHash = await bcrypt.hash('c27174055#', 10);
 
     const insertedUsers = await db
       .insert(users)
       .values([
+        {
+          email: 'admin@gmail.com',
+          passwordHash: adminPasswordHash,
+          firstName: 'administrador',
+          lastName: 'Ingallina',
+          phone: 'p4qr-343.345.32',
+          role: Role.Admin,
+        },
         {
           email: 'admin@example.com',
           passwordHash,
