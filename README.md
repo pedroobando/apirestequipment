@@ -21,7 +21,7 @@ Backend para registro y seguimiento de equipos durante emergencias en Venezuela.
 - Validación con `class-validator` (whitelist + forbidNonWhitelisted).
 - Filtro global de excepciones con `errorId` UUID para correlación con logs.
 - Documentación Swagger en `/api/docs` con DTOs anotados.
-- 237 tests unitarios, cobertura ~93%.
+- 265 tests unitarios, cobertura ~93%.
 
 ## Estructura del proyecto
 
@@ -200,7 +200,41 @@ pnpm run test:e2e
 pnpm run lint
 ```
 
-**Estado actual de tests:** 237 tests, 26 suites, ~93% de cobertura.
+**Estado actual de tests:** 265 tests, 29 suites, ~93% de cobertura.
+
+## Scripts
+
+Comandos más usados del día a día. La lista completa está en `package.json`.
+
+### Base de datos
+
+| Script | Descripción |
+|--------|-------------|
+| `pnpm db:generate` | Genera migración SQL desde los schemas Drizzle. |
+| `pnpm db:migrate` | Aplica las migraciones pendientes. |
+| `pnpm db:studio` | UI web de Drizzle para inspeccionar y editar datos. |
+| `pnpm db:seed` | Carga los 12 equipment types (requiere `DATABASE_URL`). |
+| `pnpm db:seed:dev` | Seed completo: usuarios, equipment, locations, missions. |
+| `pnpm db:wipe` | Borra todas las filas en orden de FKs (pide `WIPE` o `CONFIRM_WIPE=1`). |
+| `pnpm db:testing:users` | Crea 8 usuarios de prueba vía API. |
+| `pnpm db:testing:users:cleanup` | Borra los 8 usuarios de prueba. |
+| `pnpm db:testing:equipment` | Crea 5 types + 5 operators + ~50 equipment vía API. |
+| `pnpm db:testing:equipment:cleanup` | Borra los registros de testing de equipment. |
+
+### Build, run, test, lint
+
+| Script | Descripción |
+|--------|-------------|
+| `pnpm build` | Compila TypeScript a `dist/`. |
+| `pnpm start:dev` | Servidor NestJS con hot-reload. |
+| `pnpm start:debug` | Como `start:dev` pero con `--inspect` para el debugger. |
+| `pnpm start:prod` | Arranca el build de producción. |
+| `pnpm test` | Corre los tests unitarios. |
+| `pnpm test:watch` | Tests en modo watch. |
+| `pnpm test:cov` | Tests con reporte de cobertura. |
+| `pnpm test:e2e` | Tests end-to-end. |
+| `pnpm lint` | ESLint con `--fix`. |
+| `pnpm format` | Prettier sobre `src/` y `test/`. |
 
 ## Manejo de errores
 
