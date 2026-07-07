@@ -140,6 +140,45 @@ pnpm run db:studio
 - `missions.operatorId` → `operators.id` (set null)
 - `operators.userId` → `users.id` (cascade)
 
+## Datos de prueba
+
+Workflow recomendado para tener la base con datos útiles para pruebas manuales. Los scripts `db:testing:*` llaman a la API HTTP, así que el server tiene que estar corriendo (`pnpm start:dev` en otra terminal).
+
+```bash
+# 1. (Opcional) Partir de cero — borra todas las filas en orden de FKs
+pnpm db:wipe
+
+# 2. Seed base de desarrollo — crea el admin que usan los pasos siguientes
+#    (admin@gmail.com / c27174055#) más 2 operators, equipment, locations, missions
+pnpm db:seed:dev
+
+# 3. (Opcional) 8 usuarios extra para probar registro, login, PATCH /me, roles
+#    (admin.ops, admin.support, operator1-6; dos promovidos a admin)
+pnpm db:testing:users
+
+# 4. (Opcional) Equipment-domain — 5 types + 5 operators + 7-12 equipment por tipo
+pnpm db:testing:equipment
+```
+
+**Volver a empezar desde cero:**
+
+```bash
+# Modo interactivo (pide tipear WIPE)
+pnpm db:wipe
+
+# Modo automático (CI / scripts)
+CONFIRM_WIPE=1 pnpm db:wipe
+```
+
+**Cleanup selectivo** (borra solo lo creado por el script correspondiente, sin tocar datos del seed):
+
+```bash
+pnpm db:testing:users:cleanup     # Borra los 8 usuarios de testing
+pnpm db:testing:equipment:cleanup  # Borra equipment / operators de testing
+```
+
+> **Nota:** `db:seed:dev` carga `.env` automáticamente. `db:seed` (equipment types solo) necesita `DATABASE_URL` exportada o pasada inline.
+
 ## Ejecución
 
 ```bash
