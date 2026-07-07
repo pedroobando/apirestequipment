@@ -18,7 +18,6 @@ export class DrizzleEquipmentRepository implements IEquipmentRepository {
   private readonly selectEquipment = {
     id: equipment.id,
     ownerId: equipment.ownerId,
-    operatorId: equipment.operatorId,
     equipmentTypeId: equipment.equipmentTypeId,
     brand: equipment.brand,
     model: equipment.model,

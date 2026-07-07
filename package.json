@@ -27,7 +27,8 @@
     "db:testing:users": "ts-node -r tsconfig-paths/register scripts/seed-testing-users.ts",
     "db:testing:users:cleanup": "ts-node -r tsconfig-paths/register scripts/cleanup-testing-users.ts",
     "db:testing:equipment": "ts-node -r tsconfig-paths/register scripts/seed-testing-equipment.ts",
-    "db:testing:equipment:cleanup": "ts-node -r tsconfig-paths/register scripts/cleanup-testing-equipment.ts"
+    "db:testing:equipment:cleanup": "ts-node -r tsconfig-paths/register scripts/cleanup-testing-equipment.ts",
+    "diagrams:generate": "ts-node -r tsconfig-paths/register scripts/generate-diagrams.ts"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",

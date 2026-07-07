@@ -6,11 +6,6 @@ export class CreateEquipmentDto {
   @IsUUID()
   ownerId: string;
 
-  @ApiPropertyOptional({ example: 'uuid' })
-  @IsOptional()
-  @IsUUID()
-  operatorId?: string;
-
   @ApiProperty({ example: 'uuid' })
   @IsUUID()
   equipmentTypeId: string;

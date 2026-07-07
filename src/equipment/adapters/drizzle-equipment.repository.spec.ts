@@ -6,7 +6,6 @@ import { IEquipment } from '../interfaces/equipment.interface';
 const mockEquipment: IEquipment = {
   id: '123e4567-e89b-12d3-a456-426614174000',
   ownerId: '123e4567-e89b-12d3-a456-426614174001',
-  operatorId: null,
   equipmentTypeId: '123e4567-e89b-12d3-a456-426614174002',
   brand: 'Toyota',
   model: 'Hilux',

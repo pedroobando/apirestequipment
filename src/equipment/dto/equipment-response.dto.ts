@@ -3,7 +3,6 @@ import { IEquipment } from '../interfaces/equipment.interface';
 export class EquipmentResponseDto {
   id: string;
   ownerId: string;
-  operatorId: string | null;
   equipmentTypeId: string;
   brand: string | null;
   model: string | null;
@@ -24,7 +23,6 @@ export class EquipmentResponseDto {
   constructor(equipment: IEquipment) {
     this.id = equipment.id;
     this.ownerId = equipment.ownerId;
-    this.operatorId = equipment.operatorId;
     this.equipmentTypeId = equipment.equipmentTypeId;
     this.brand = equipment.brand;
     this.model = equipment.model;

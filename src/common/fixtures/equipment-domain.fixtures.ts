@@ -45,7 +45,6 @@ export function buildEquipment(overrides: EquipmentOverrides = {}): IEquipment {
   return {
     id: randomUUID(),
     ownerId: randomUUID(),
-    operatorId: null,
     equipmentTypeId: randomUUID(),
     brand: 'Toyota',
     model: 'Hilux',
@@ -91,16 +90,10 @@ export function buildEquipmentListForTypes(
     const count = Math.floor(Math.random() * 6) + 7;
 
     for (let i = 0; i < count; i++) {
-      const operator =
-        Math.random() > 0.3
-          ? OPERATORS_FIXTURE[Math.floor(Math.random() * OPERATORS_FIXTURE.length)] ?? null
-          : null;
-
       equipmentList.push(
         buildEquipment({
           equipmentTypeId: type.id,
           ownerId: randomUUID(),
-          operatorId: operator?.id ?? null,
           plate: `${type.name.substring(0, 3).toUpperCase()}-${i + 1}`,
         }),
       );

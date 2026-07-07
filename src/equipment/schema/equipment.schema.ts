@@ -10,7 +10,6 @@ import {
 import { timestampColumns } from 'src/common/schema/timestamp';
 import { users } from 'src/users/schema/users.schema';
 import { equipmentTypes } from 'src/equipment-types/schema/equipment-types.schema';
-import { operators } from 'src/operators/schema/operators.schema';
 import { locations } from 'src/locations/schema/locations.schema';
 
 export const equipment = pgTable(
@@ -18,7 +17,6 @@ export const equipment = pgTable(
   {
     id: uuid('id').primaryKey().defaultRandom(),
     ownerId: uuid('owner_id').notNull(),
-    operatorId: uuid('operator_id'),
     equipmentTypeId: uuid('equipment_type_id').notNull(),
     currentLocationId: uuid('current_location_id'),
     brand: text('brand'),
@@ -41,11 +39,6 @@ export const equipment = pgTable(
       columns: [table.ownerId],
       foreignColumns: [users.id],
     }).onDelete('cascade'),
-    foreignKey({
-      name: 'equipment_operator_id_fk',
-      columns: [table.operatorId],
-      foreignColumns: [operators.id],
-    }).onDelete('set null'),
     foreignKey({
       name: 'equipment_type_id_fk',
       columns: [table.equipmentTypeId],

@@ -88,7 +88,6 @@ interface PaginatedOperators {
 interface EquipmentResponse {
   id: string;
   ownerId: string;
-  operatorId: string | null;
   equipmentTypeId: string;
   brand: string | null;
   model: string | null;
@@ -131,7 +130,6 @@ interface CreateOperatorPayload {
 
 interface CreateEquipmentPayload {
   ownerId: string;
-  operatorId?: string;
   equipmentTypeId: string;
   brand?: string;
   model?: string;
@@ -403,10 +401,8 @@ async function main(): Promise<void> {
     const count = randInt(7, 12);
     console.log(`  Tipo ${EQUIPMENT_TYPE_NAMES[typeIndex]}: ${count} equipos`);
     for (let seq = 1; seq <= count; seq++) {
-      const operatorId = Math.random() < 0.3 ? null : pick(operatorResults).id;
       const r = await createEquipmentItem(token, {
         ownerId: pick(userResults).id,
-        operatorId: operatorId ?? undefined,
         equipmentTypeId,
         brand: pick(BRANDS),
         model: pick(MODELS),

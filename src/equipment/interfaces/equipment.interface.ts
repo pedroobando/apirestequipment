@@ -1,7 +1,6 @@
 export interface IEquipment {
   id: string;
   ownerId: string;
-  operatorId: string | null;
   equipmentTypeId: string;
   brand: string | null;
   model: string | null;

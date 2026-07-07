@@ -163,7 +163,6 @@ async function main() {
       .values([
         {
           ownerId: adminUser.id,
-          operatorId: operator1.id,
           equipmentTypeId: equipmentType.id,
           brand: 'Toyota',
           model: 'Hilux',
@@ -176,7 +175,6 @@ async function main() {
         },
         {
           ownerId: adminUser.id,
-          operatorId: operator2.id,
           equipmentTypeId: equipmentType.id,
           brand: 'Ford',
           model: 'F-350',

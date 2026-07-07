@@ -13,11 +13,6 @@ export class UpdateEquipmentDto {
   @ApiPropertyOptional({ example: 'uuid' })
   @IsOptional()
   @IsUUID()
-  operatorId?: string;
-
-  @ApiPropertyOptional({ example: 'uuid' })
-  @IsOptional()
-  @IsUUID()
   equipmentTypeId?: string;
 
   @ApiPropertyOptional({ example: 'Toyota' })
