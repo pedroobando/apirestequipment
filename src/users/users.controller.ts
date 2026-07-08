@@ -13,6 +13,7 @@ import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { UpdateMeDto } from './dto/update-me.dto';
 import { PaginationDto } from 'src/common/dto/pagination.dto';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import type { AuthenticatedUser } from 'src/common/decorators/current-user.decorator';
@@ -44,19 +45,29 @@ export class UsersController {
   }
 
   @Post()
+  @Roles(Role.Admin)
+  @ApiBearerAuth()
   create(@Body() createUserDto: CreateUserDto) {
     return this.usersService.create(createUserDto);
   }
 
+  @Patch('me')
+  @ApiBearerAuth()
+  updateMe(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() updateMeDto: UpdateMeDto,
+  ) {
+    return this.usersService.updateMe(user.userId, updateMeDto);
+  }
+
   @Patch(':id')
+  @Roles(Role.Admin)
   @ApiBearerAuth()
   update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateUserDto: UpdateUserDto,
-    @CurrentUser() user: AuthenticatedUser,
   ) {
-    const isAdmin = user.role === Role.Admin.toString();
-    return this.usersService.update(id, updateUserDto, user.userId, isAdmin);
+    return this.usersService.adminUpdate(id, updateUserDto);
   }
 
   @Delete(':id')

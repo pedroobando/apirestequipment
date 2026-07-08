@@ -170,51 +170,28 @@ describe('UsersService', () => {
     });
   });
 
-  describe('update', () => {
-    it('should update own profile as user', async () => {
+  describe('updateMe', () => {
+    it('should update own profile', async () => {
       mockRepository.findById.mockResolvedValue(mockUser);
       mockRepository.update.mockResolvedValue({
         ...mockUser,
         firstName: 'Jane',
       });
 
-      const dto: UpdateUserDto = { firstName: 'Jane' };
+      const dto = { firstName: 'Jane' };
 
-      const result = await service.update(mockUser.id, dto, mockUser.id, false);
+      const result = await service.updateMe(mockUser.id, dto);
 
       expect(result.firstName).toBe('Jane');
-    });
-
-    it('should prevent non-admin from updating another user', async () => {
-      await expect(
-        service.update(mockUser.id, { firstName: 'Jane' }, 'other-id', false),
-      ).rejects.toThrow(NotFoundException);
-    });
-
-    it('should remove role field when non-admin tries to update it', async () => {
-      mockRepository.findById.mockResolvedValue(mockUser);
-      mockRepository.update.mockResolvedValue(mockUser);
-
-      const dto: UpdateUserDto = {
-        firstName: 'Jane',
-        role: Role.Admin,
-      };
-
-      await service.update(mockUser.id, dto, mockUser.id, false);
-
-      expect(mockRepository.update).toHaveBeenCalledWith(
-        mockUser.id,
-        expect.not.objectContaining({ role: Role.Admin }),
-      );
     });
 
     it('should hash password when updating', async () => {
       mockRepository.findById.mockResolvedValue(mockUser);
       mockRepository.update.mockResolvedValue(mockUser);
 
-      const dto: UpdateUserDto = { password: 'newpassword123' };
+      const dto = { password: 'newpassword123' };
 
-      await service.update(mockUser.id, dto, mockUser.id, false);
+      await service.updateMe(mockUser.id, dto);
 
       expect(mockRepository.update).toHaveBeenCalledWith(
         mockUser.id,
@@ -227,7 +204,7 @@ describe('UsersService', () => {
       mockRepository.update.mockRejectedValue(new Error('db error'));
 
       await expect(
-        service.update(mockUser.id, { firstName: 'Jane' }, mockUser.id, false),
+        service.updateMe(mockUser.id, { firstName: 'Jane' }),
       ).rejects.toThrow(Error);
     });
   });

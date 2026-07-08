@@ -13,6 +13,7 @@ import {
 import type { IUsersRepository } from './ports/users.repository';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { UpdateMeDto } from './dto/update-me.dto';
 import { UserResponseDto } from './dto/user-response.dto';
 import { IUser } from './interfaces/user.interface';
 import { tryCatch } from 'src/common/utils/try-catch';
@@ -100,21 +101,8 @@ export class UsersService {
     return new UserResponseDto(user);
   }
 
-  async update(
-    id: string,
-    data: UpdateUserDto,
-    currentUserId: string,
-    isAdmin: boolean,
-  ): Promise<UserResponseDto> {
-    if (!isAdmin && id !== currentUserId) {
-      throw new NotFoundException('User not found');
-    }
-
+  async updateMe(id: string, data: UpdateMeDto): Promise<UserResponseDto> {
     await this.findById(id);
-
-    if (!isAdmin && data.role) {
-      delete data.role;
-    }
 
     let updateData: UpdateUserData = { ...data };
 
@@ -128,7 +116,7 @@ export class UsersService {
     );
 
     if (error || !updatedUser) {
-      this.logger.error(`update - ${error?.message}`);
+      this.logger.error(`updateMe - ${error?.message}`);
       throw error;
     }
 
