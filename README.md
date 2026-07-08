@@ -15,13 +15,13 @@ Backend para registro y seguimiento de equipos durante emergencias en Venezuela.
 
 - Arquitectura hexagonal estricta por módulo.
 - 7 módulos: `auth`, `users`, `operators`, `equipment`, `equipment-types`, `locations`, `missions`.
-- Autenticación JWT con access token (15 min) + refresh token (7 días).
+- Autenticación JWT con access token (1 h) + refresh token (7 días).
 - Google OAuth configurable (se desactiva si no hay credenciales).
 - Guards globales: `JwtAuthGuard` y `RolesGuard` (`admin` / `user`).
 - Validación con `class-validator` (whitelist + forbidNonWhitelisted).
 - Filtro global de excepciones con `errorId` UUID para correlación con logs.
 - Documentación Swagger en `/api/docs` con DTOs anotados.
-- 265 tests unitarios, cobertura ~93%.
+- 305 tests unitarios, cobertura ~93%.
 
 ## Estructura del proyecto
 
@@ -126,7 +126,7 @@ npx ts-node -r tsconfig-paths/register src/database/seeds/seed-dev.ts
 pnpm run db:studio
 ```
 
-**Tablas generadas:** `users`, `equipment_types`, `operators`, `equipment`, `locations`, `missions`.
+**Tablas generadas:** `users`, `equipment_types`, `operators`, `equipment`, `equipment_maintenance`, `locations`, `missions`.
 
 **Relaciones principales:**
 
@@ -139,6 +139,8 @@ pnpm run db:studio
 - `missions.equipmentId` → `equipment.id` (cascade)
 - `missions.operatorId` → `operators.id` (set null)
 - `operators.userId` → `users.id` (cascade)
+- `equipment_maintenance.equipmentId` → `equipment.id` (cascade)
+- `equipment_maintenance.operatorId` → `operators.id` (restrict)
 
 ## Datos de prueba
 
@@ -217,6 +219,10 @@ La API expone:
 | `GET` | `/api/users` | Admin | Listar usuarios |
 | `GET` | `/api/missions` | Público | Listar misiones |
 | `POST` | `/api/equipment/:id/locations` | Bearer | Registrar ubicación |
+| `GET` | `/api/equipment/:id/maintenance` | Bearer | Listar historial de mantenimiento |
+| `POST` | `/api/equipment/:id/maintenance` | Bearer | Registrar mantenimiento (asignado a un mecánico) |
+| `PATCH` | `/api/equipment/:id/maintenance/:recordId` | Bearer | Actualizar mantenimiento |
+| `DELETE` | `/api/equipment/:id/maintenance/:recordId` | Bearer | Eliminar mantenimiento |
 
 La lista completa está en `/api/docs`.
 
@@ -239,7 +245,7 @@ pnpm run test:e2e
 pnpm run lint
 ```
 
-**Estado actual de tests:** 265 tests, 29 suites, ~93% de cobertura.
+**Estado actual de tests:** 305 tests, 34 suites, ~93% de cobertura.
 
 ## Scripts
 
