@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ConflictException, NotFoundException } from '@nestjs/common';
 import { EquipmentService } from './equipment.service';
 import { EQUIPMENT_REPOSITORY_TOKEN } from './ports/equipment.repository';
+import { EquipmentMaintenanceService } from './maintenance/equipment-maintenance.service';
 import { CreateEquipmentDto } from './dto/create-equipment.dto';
 import { UpdateEquipmentDto } from './dto/update-equipment.dto';
 import { IEquipment } from './interfaces/equipment.interface';
@@ -36,6 +37,11 @@ const mockRepository = {
   softDelete: jest.fn(),
 };
 
+const mockMaintenanceService = {
+  openRecord: jest.fn(),
+  closeRecord: jest.fn(),
+};
+
 describe('EquipmentService', () => {
   let service: EquipmentService;
 
@@ -46,6 +52,10 @@ describe('EquipmentService', () => {
         {
           provide: EQUIPMENT_REPOSITORY_TOKEN,
           useValue: mockRepository,
+        },
+        {
+          provide: EquipmentMaintenanceService,
+          useValue: mockMaintenanceService,
         },
       ],
     }).compile();
@@ -237,6 +247,78 @@ describe('EquipmentService', () => {
 
       expect(result.status).toBe('in_use');
       expect(result.statusReason).toBe('Mission started');
+      expect(mockMaintenanceService.openRecord).not.toHaveBeenCalled();
+      expect(mockMaintenanceService.closeRecord).not.toHaveBeenCalled();
+    });
+
+    it('should auto-open maintenance record when transitioning to maintenance', async () => {
+      mockRepository.findById.mockResolvedValue(mockEquipment);
+      mockRepository.findByPlate.mockResolvedValue(null);
+      mockRepository.update.mockResolvedValue({
+        ...mockEquipment,
+        status: 'maintenance',
+        statusReason: 'Scheduled maintenance',
+      });
+
+      const result = await service.updateStatus(
+        mockEquipment.id,
+        'maintenance',
+        'Scheduled maintenance',
+      );
+
+      expect(result.status).toBe('maintenance');
+      expect(mockMaintenanceService.openRecord).toHaveBeenCalledWith(
+        mockEquipment.id,
+      );
+      expect(mockMaintenanceService.closeRecord).not.toHaveBeenCalled();
+    });
+
+    it('should auto-close maintenance record when leaving maintenance', async () => {
+      mockRepository.findById.mockResolvedValue({
+        ...mockEquipment,
+        status: 'maintenance',
+      });
+      mockRepository.findByPlate.mockResolvedValue(null);
+      mockRepository.update.mockResolvedValue({
+        ...mockEquipment,
+        status: 'available',
+        statusReason: 'Maintenance completed',
+      });
+
+      const result = await service.updateStatus(
+        mockEquipment.id,
+        'available',
+        'Maintenance completed',
+      );
+
+      expect(result.status).toBe('available');
+      expect(mockMaintenanceService.closeRecord).toHaveBeenCalledWith(
+        mockEquipment.id,
+      );
+      expect(mockMaintenanceService.openRecord).not.toHaveBeenCalled();
+    });
+
+    it('should not duplicate open records when already in maintenance', async () => {
+      mockRepository.findById.mockResolvedValue({
+        ...mockEquipment,
+        status: 'maintenance',
+      });
+      mockRepository.findByPlate.mockResolvedValue(null);
+      mockRepository.update.mockResolvedValue({
+        ...mockEquipment,
+        status: 'maintenance',
+        statusReason: 'Still in maintenance',
+      });
+
+      const result = await service.updateStatus(
+        mockEquipment.id,
+        'maintenance',
+        'Still in maintenance',
+      );
+
+      expect(result.status).toBe('maintenance');
+      expect(mockMaintenanceService.openRecord).not.toHaveBeenCalled();
+      expect(mockMaintenanceService.closeRecord).not.toHaveBeenCalled();
     });
   });
 

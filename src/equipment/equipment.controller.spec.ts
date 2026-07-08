@@ -108,7 +108,9 @@ describe('EquipmentController', () => {
 
     it('should throw NotFoundException when equipment not found', async () => {
       mockService.findById.mockRejectedValue(
-        new NotFoundException(`Equipment with ID ${mockEquipment.id} not found`),
+        new NotFoundException(
+          `Equipment with ID ${mockEquipment.id} not found`,
+        ),
       );
 
       await expect(controller.findById(mockEquipment.id)).rejects.toThrow(
@@ -176,7 +178,9 @@ describe('EquipmentController', () => {
     it('should throw NotFoundException when equipment not found', async () => {
       const dto: UpdateEquipmentDto = { brand: 'Ford' };
       mockService.update.mockRejectedValue(
-        new NotFoundException(`Equipment with ID ${mockEquipment.id} not found`),
+        new NotFoundException(
+          `Equipment with ID ${mockEquipment.id} not found`,
+        ),
       );
 
       await expect(controller.update(mockEquipment.id, dto)).rejects.toThrow(
@@ -210,7 +214,9 @@ describe('EquipmentController', () => {
         statusReason: 'Scheduled service',
       };
       mockService.updateStatus.mockRejectedValue(
-        new NotFoundException(`Equipment with ID ${mockEquipment.id} not found`),
+        new NotFoundException(
+          `Equipment with ID ${mockEquipment.id} not found`,
+        ),
       );
 
       await expect(
@@ -225,7 +231,7 @@ describe('EquipmentController', () => {
 
     it('should throw BadRequestException for invalid status value', async () => {
       const dto: UpdateEquipmentStatusDto = {
-        status: 'invalid_status',
+        status: 'invalid_status' as unknown as EquipmentStatus,
         statusReason: 'Invalid status',
       };
       mockService.updateStatus.mockRejectedValue(
@@ -254,7 +260,9 @@ describe('EquipmentController', () => {
 
     it('should throw NotFoundException when equipment not found', async () => {
       mockService.softDelete.mockRejectedValue(
-        new NotFoundException(`Equipment with ID ${mockEquipment.id} not found`),
+        new NotFoundException(
+          `Equipment with ID ${mockEquipment.id} not found`,
+        ),
       );
 
       await expect(controller.softDelete(mockEquipment.id)).rejects.toThrow(

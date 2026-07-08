@@ -1,4 +1,5 @@
-import { IsString, IsOptional, IsBoolean } from 'class-validator';
+import { IsString, IsOptional, IsBoolean, IsEnum } from 'class-validator';
+import { OperatorRole } from 'src/common/enums/operator-role.enum';
 
 export class UpdateOperatorDto {
   @IsOptional()
@@ -10,8 +11,8 @@ export class UpdateOperatorDto {
   phone?: string;
 
   @IsOptional()
-  @IsString()
-  role?: string;
+  @IsEnum(OperatorRole)
+  role?: OperatorRole;
 
   @IsOptional()
   @IsBoolean()

@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsOptional } from 'class-validator';
+import { IsEnum, IsOptional, IsString } from 'class-validator';
+import { EquipmentStatus } from 'src/common/enums/equipment-status.enum';
 
 export class UpdateEquipmentStatusDto {
   @ApiProperty({
@@ -14,10 +15,11 @@ export class UpdateEquipmentStatusDto {
       'stopped_document',
       'stopped_unauthorized',
       'out_of_service',
+      'maintenance',
     ],
   })
-  @IsString()
-  status: string;
+  @IsEnum(EquipmentStatus)
+  status: EquipmentStatus;
 
   @ApiPropertyOptional({ example: 'Mantenimiento programado' })
   @IsOptional()

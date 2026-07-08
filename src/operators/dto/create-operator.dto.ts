@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsOptional, IsUUID } from 'class-validator';
+import { IsString, IsOptional, IsUUID, IsEnum } from 'class-validator';
+import { OperatorRole } from 'src/common/enums/operator-role.enum';
 
 export class CreateOperatorDto {
   @ApiProperty({ example: 'uuid' })
@@ -16,8 +17,8 @@ export class CreateOperatorDto {
   @IsString()
   phone?: string;
 
-  @ApiPropertyOptional({ example: 'driver' })
+  @ApiPropertyOptional({ example: 'driver', enum: OperatorRole })
   @IsOptional()
-  @IsString()
-  role?: string;
+  @IsEnum(OperatorRole)
+  role?: OperatorRole;
 }

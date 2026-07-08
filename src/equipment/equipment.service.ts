@@ -14,6 +14,7 @@ import { IEquipment } from './interfaces/equipment.interface';
 import { tryCatch } from 'src/common/utils/try-catch';
 import { PaginationDto } from 'src/common/dto/pagination.dto';
 import { PaginationResponseDto } from 'src/common/dto/pagination-response.dto';
+import { EquipmentMaintenanceService } from './maintenance/equipment-maintenance.service';
 
 @Injectable()
 export class EquipmentService {
@@ -22,6 +23,7 @@ export class EquipmentService {
   constructor(
     @Inject(EQUIPMENT_REPOSITORY_TOKEN)
     private readonly repository: IEquipmentRepository,
+    private readonly maintenanceService: EquipmentMaintenanceService,
   ) {}
 
   async findAll(
@@ -138,11 +140,27 @@ export class EquipmentService {
     return new EquipmentResponseDto(result);
   }
 
+  /**
+   * Updates equipment status and automatically opens/closes maintenance records
+   * when transitioning to/from 'maintenance' status.
+   */
   async updateStatus(
     id: string,
     status: string,
     statusReason?: string,
   ): Promise<EquipmentResponseDto> {
+    const equipment = await this.getRawById(id);
+    const oldStatus = equipment.status;
+    const newStatus = status;
+
+    if (oldStatus !== 'maintenance' && newStatus === 'maintenance') {
+      await this.maintenanceService.openRecord(id);
+    }
+
+    if (oldStatus === 'maintenance' && newStatus !== 'maintenance') {
+      await this.maintenanceService.closeRecord(id);
+    }
+
     return this.update(id, { status, statusReason });
   }
 

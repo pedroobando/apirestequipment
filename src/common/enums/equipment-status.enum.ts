@@ -8,4 +8,5 @@ export enum EquipmentStatus {
   StoppedDocument = 'stopped_document',
   StoppedUnauthorized = 'stopped_unauthorized',
   OutOfService = 'out_of_service',
+  Maintenance = 'maintenance',
 }

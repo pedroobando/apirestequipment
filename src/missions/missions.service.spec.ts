@@ -7,6 +7,7 @@ import { UpdateMissionDto } from './dto/update-mission.dto';
 import { IMission } from './interfaces/mission.interface';
 import { MissionStatus } from 'src/common/enums/mission-status.enum';
 import { EquipmentService } from 'src/equipment/equipment.service';
+import { EquipmentMaintenanceService } from 'src/equipment/maintenance/equipment-maintenance.service';
 import { EQUIPMENT_REPOSITORY_TOKEN } from 'src/equipment/ports/equipment.repository';
 
 const mockMission: IMission = {
@@ -43,6 +44,11 @@ const mockEquipmentRepository = {
   updateStatus: jest.fn(),
 };
 
+const mockMaintenanceService = {
+  openRecord: jest.fn(),
+  closeRecord: jest.fn(),
+};
+
 describe('MissionsService', () => {
   let service: MissionsService;
 
@@ -58,6 +64,10 @@ describe('MissionsService', () => {
         {
           provide: EQUIPMENT_REPOSITORY_TOKEN,
           useValue: mockEquipmentRepository,
+        },
+        {
+          provide: EquipmentMaintenanceService,
+          useValue: mockMaintenanceService,
         },
       ],
     }).compile();
