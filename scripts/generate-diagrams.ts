@@ -156,57 +156,128 @@ function writeDiagram(path: string, elements: ExcalidrawElement[]): void {
 function buildErDiagram(): ExcalidrawElement[] {
   const elements: ExcalidrawElement[] = [];
   const W = 280;
-  const H = 240;
+  const H = 380;
 
   // Layout
   // users (top-left)            equipment_types (top-right)
-  // operators (mid-left)        equipment (center, big)
+  // operators (mid-left)        equipment (center)
   // locations (bottom-left)     missions (bottom-right)
 
   const positions: Record<string, { x: number; y: number }> = {
     users: { x: 60, y: 40 },
     equipment_types: { x: 720, y: 40 },
-    operators: { x: 60, y: 360 },
-    equipment: { x: 420, y: 360 },
-    locations: { x: 60, y: 680 },
-    missions: { x: 720, y: 680 },
+    operators: { x: 60, y: 480 },
+    equipment: { x: 420, y: 480 },
+    locations: { x: 60, y: 920 },
+    missions: { x: 720, y: 920 },
   };
 
-  const tables: Array<{ key: string; name: string; fields: string[]; bg: string }> = [
+  const tables: Array<{ key: string; name: string; module: string; fields: string[]; bg: string }> = [
     {
       key: 'users',
       name: 'users',
-      fields: ['id (uuid PK)', 'email (unique)', 'password_hash', 'first_name', 'last_name', 'phone?', 'role (admin|user)', 'provider', 'is_active'],
+      module: 'UsersModule',
+      fields: [
+        'id (uuid PK)',
+        'email (unique)',
+        'password_hash',
+        'first_name',
+        'last_name',
+        'phone?',
+        'role (admin|user)',
+        'provider',
+        'provider_id?',
+        'is_active',
+        'created_at',
+        'updated_at',
+      ],
       bg: '#a5d8ff',
     },
     {
       key: 'equipment_types',
       name: 'equipment_types',
+      module: 'EquipmentTypesModule',
       fields: ['id (uuid PK)', 'name (unique)', 'is_active', 'created_at', 'updated_at'],
       bg: '#a5d8ff',
     },
     {
       key: 'operators',
       name: 'operators',
-      fields: ['id (uuid PK)', 'user_id (FK → users)', 'license_number?', 'phone?', 'role (driver)', 'is_active'],
+      module: 'OperatorsModule',
+      fields: [
+        'id (uuid PK)',
+        'user_id (FK → users)',
+        'license_number?',
+        'phone?',
+        'role (driver)',
+        'is_active',
+        'created_at',
+        'updated_at',
+      ],
       bg: '#b2f2bb',
     },
     {
       key: 'equipment',
       name: 'equipment',
-      fields: ['id (uuid PK)', 'owner_id (FK → users)', 'equipment_type_id (FK → equipment_types)', 'current_location_id? (FK → locations)', 'plate?', 'status', 'is_active'],
+      module: 'EquipmentModule',
+      fields: [
+        'id (uuid PK)',
+        'owner_id (FK → users)',
+        'equipment_type_id (FK → equipment_types)',
+        'current_location_id? (FK → locations)',
+        'brand?',
+        'model?',
+        'year?',
+        'plate?',
+        'serial_number?',
+        'fuel_type?',
+        'capacity?',
+        'status',
+        'status_reason?',
+        'origin?',
+        'destination?',
+        'is_active',
+        'created_at',
+        'updated_at',
+      ],
       bg: '#ffd8a8',
     },
     {
       key: 'locations',
       name: 'locations',
-      fields: ['id (uuid PK)', 'equipment_id (FK → equipment)', 'latitude', 'longitude', 'accuracy?', 'source', 'recorded_at'],
+      module: 'LocationsModule',
+      fields: [
+        'id (uuid PK)',
+        'equipment_id (FK → equipment)',
+        'latitude',
+        'longitude',
+        'accuracy?',
+        'source',
+        'recorded_at',
+        'created_at',
+        'updated_at',
+      ],
       bg: '#b2f2bb',
     },
     {
       key: 'missions',
       name: 'missions',
-      fields: ['id (uuid PK)', 'user_id_creator (FK → users)', 'equipment_id (FK → equipment)', 'operator_id? (FK → operators)', 'title', 'status', 'started_at?', 'completed_at?'],
+      module: 'MissionsModule',
+      fields: [
+        'id (uuid PK)',
+        'user_id_creator (FK → users)',
+        'equipment_id (FK → equipment)',
+        'operator_id? (FK → operators)',
+        'title',
+        'description?',
+        'origin?',
+        'destination?',
+        'status',
+        'started_at?',
+        'completed_at?',
+        'created_at',
+        'updated_at',
+      ],
       bg: '#b2f2bb',
     },
   ];
@@ -216,8 +287,8 @@ function buildErDiagram(): ExcalidrawElement[] {
     const boxId = `box-${t.key}`;
     elements.push(rect(boxId, p.x, p.y, W, H, t.bg, { roundness: true }));
 
-    // Title row
-    const titleH = 36;
+    // Table name
+    const titleH = 28;
     elements.push(
       text(`title-${t.key}`, p.x + 12, p.y + 10, W - 24, titleH, t.name, 20, {
         color: '#0b3d91',
@@ -225,11 +296,18 @@ function buildErDiagram(): ExcalidrawElement[] {
       }),
     );
 
-    // Divider line under title
+    // Module subtitle
+    elements.push(
+      text(`sub-${t.key}`, p.x + 12, p.y + 36, W - 24, 18, `↳ ${t.module}`, 12, {
+        color: '#5c7c91',
+      }),
+    );
+
+    // Divider line under title block
     elements.push(
       baseProps(`div-${t.key}`, 'line', {
         x: p.x + 10,
-        y: p.y + titleH + 10,
+        y: p.y + 58,
         width: W - 20,
         height: 0,
         points: [
@@ -244,11 +322,11 @@ function buildErDiagram(): ExcalidrawElement[] {
     );
 
     // Fields list
-    const fieldsY = p.y + titleH + 22;
-    const lineH = 22;
+    const fieldsY = p.y + 68;
+    const lineH = 18;
     t.fields.forEach((f, i) => {
       elements.push(
-        text(`field-${t.key}-${i}`, p.x + 14, fieldsY + i * lineH, W - 24, lineH, f, 14),
+        text(`field-${t.key}-${i}`, p.x + 14, fieldsY + i * lineH, W - 24, lineH, f, 13),
       );
     });
   }
@@ -286,23 +364,38 @@ function buildErDiagram(): ExcalidrawElement[] {
     );
   }
 
-  // Legend (bottom-right corner)
-  const legX = 720;
-  const legY = 360;
+  // Legend (right side, vertically centered against the middle row)
+  const legX = 1040;
+  const legY = 540;
   const legW = 280;
-  const legH = 160;
+  const legH = 220;
   elements.push(rect('legend', legX, legY, legW, legH, '#f1f3f5', { roundness: true }));
   elements.push(text('legend-title', legX + 12, legY + 10, legW - 24, 22, 'Leyenda — onDelete', 16, { color: '#0b3d91' }));
   const legendItems: Array<{ color: string; text: string; dashed?: boolean }> = [
     { color: '#1971c2', text: 'cascade — borra hijos' },
     { color: '#e8590c', text: 'restrict — bloquea borrado' },
-    { color: '#2f9e44', text: 'set null — limpia FK (opcional = dashed)' },
-    { color: '#c92a2a', text: 'restrict — bloquea borrado (admin)' },
+    { color: '#2f9e44', text: 'set null — limpia FK (dashed = opcional)' },
   ];
   legendItems.forEach((it, i) => {
-    const yy = legY + 40 + i * 24;
+    const yy = legY + 42 + i * 28;
     elements.push(...arrow(`leg-arr-${i}`, legX + 16, yy + 8, 40, 0, { color: it.color, dashed: it.dashed }));
     elements.push(text(`leg-txt-${i}`, legX + 64, yy, legW - 80, 20, it.text, 13));
+  });
+
+  // Color legend for module groups
+  const groupLegY = legY + legH + 24;
+  const groupLegH = 140;
+  elements.push(rect('group-legend', legX, groupLegY, legW, groupLegH, '#f1f3f5', { roundness: true }));
+  elements.push(text('group-legend-title', legX + 12, groupLegY + 10, legW - 24, 22, 'Color por módulo', 16, { color: '#0b3d91' }));
+  const groupItems: Array<{ bg: string; text: string }> = [
+    { bg: '#a5d8ff', text: 'Auth-adjunto (users, types)' },
+    { bg: '#b2f2bb', text: 'Catálogo / misiones' },
+    { bg: '#ffd8a8', text: 'Equipment (core)' },
+  ];
+  groupItems.forEach((it, i) => {
+    const yy = groupLegY + 42 + i * 28;
+    elements.push(rect(`grp-sw-${i}`, legX + 16, yy, 40, 18, it.bg, { roundness: false }));
+    elements.push(text(`grp-txt-${i}`, legX + 64, yy, legW - 80, 20, it.text, 13));
   });
 
   return elements;
