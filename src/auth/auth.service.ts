@@ -106,7 +106,7 @@ export class AuthService {
   }
 
   private buildTokens(payload: JwtPayload): AuthTokens {
-    const accessToken = this.jwtService.sign(payload, { expiresIn: '15m' });
+    const accessToken = this.jwtService.sign(payload, { expiresIn: '1h' });
     const refreshToken = this.jwtService.sign(
       { sub: payload.sub, type: 'refresh' },
       { expiresIn: '7d' },
