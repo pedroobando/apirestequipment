@@ -20,7 +20,7 @@ Backend para registro y seguimiento de equipos durante emergencias en Venezuela.
 - Validación con `class-validator` (whitelist + forbidNonWhitelisted).
 - Filtro global de excepciones con `errorId` UUID para correlación con logs.
 - Documentación Swagger en `/api/docs` con DTOs anotados.
-- 305 tests unitarios, cobertura ~93%.
+- 298 tests unitarios, cobertura ~93%.
 
 ## Estructura del proyecto
 
@@ -239,7 +239,7 @@ pnpm run test:e2e
 pnpm run lint
 ```
 
-**Estado actual de tests:** 305 tests, 34 suites, ~93% de cobertura.
+**Estado actual de tests:** 298 tests, 32 suites, ~93% de cobertura.
 
 ## Scripts
 
