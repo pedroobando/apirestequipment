@@ -7,7 +7,7 @@ Backend para registro y seguimiento de equipos durante emergencias en Venezuela.
 - NestJS 11
 - Drizzle ORM 0.45
 - PostgreSQL 17
-- JWT (passport-jwt) + Google OAuth 2.0 opcional
+- JWT (passport-jwt)
 - Swagger / OpenAPI 3
 - Jest 30
 
@@ -16,7 +16,6 @@ Backend para registro y seguimiento de equipos durante emergencias en Venezuela.
 - Arquitectura hexagonal estricta por módulo.
 - 7 módulos: `auth`, `users`, `operators`, `equipment`, `equipment-types`, `locations`, `missions`.
 - Autenticación JWT con access token (1 h) + refresh token (7 días).
-- Google OAuth configurable (se desactiva si no hay credenciales).
 - Guards globales: `JwtAuthGuard` y `RolesGuard` (`admin` / `user`).
 - Validación con `class-validator` (whitelist + forbidNonWhitelisted).
 - Filtro global de excepciones con `errorId` UUID para correlación con logs.
@@ -37,8 +36,8 @@ src/
     utils/                   # tryCatch, mapDatabaseError
   auth/                      # Autenticación
     dto/                     # LoginDto, RegisterDto
-    guards/                  # JwtAuthGuard, GoogleAuthGuard, RolesGuard
-    strategies/              # jwt.strategy, google.strategy
+    guards/                  # JwtAuthGuard, RolesGuard
+    strategies/              # jwt.strategy
   users/                     # Usuarios
   equipment-types/           # Catálogo de tipos de equipo
   operators/                 # Operadores
@@ -96,13 +95,8 @@ cp .env.template .env
 | `DATABASE_URL` | URL de conexión a PostgreSQL | `postgresql://adminEq:***@localhost:5434/equipment` |
 | `JWT_SECRET` | Secreto para firmar JWT (obligatorio en producción) | `change-me-in-production` |
 | `JWT_EXPIRES_IN` | Vida del access token | `7d` (sobrescrito a `15m` en `auth.module.ts`) |
-| `GOOGLE_CLIENT_ID` | Client ID de Google OAuth (opcional) | vacío |
-| `GOOGLE_CLIENT_SECRET` | Client Secret de Google OAuth (opcional) | vacío |
-| `GOOGLE_CALLBACK_URL` | URL de callback de Google | `http://localhost:3000/auth/google/callback` |
 | `PORT` | Puerto del servidor | `3000` |
 | `NODE_ENV` | Entorno (`development` / `production`) | `development` |
-
-> **Nota:** Si `GOOGLE_CLIENT_ID` y `GOOGLE_CLIENT_SECRET` están vacíos, el módulo de Google OAuth se desactiva automáticamente y `GET /api/auth/google` devuelve `401` con mensaje claro.
 
 ## Base de datos
 
