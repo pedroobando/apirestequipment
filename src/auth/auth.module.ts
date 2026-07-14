@@ -5,18 +5,6 @@ import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { UsersModule } from 'src/users/users.module';
 import { JwtStrategy, JWT_SECRET } from './strategies/jwt.strategy';
-import {
-  GoogleStrategy,
-  isGoogleOAuthEnabled,
-} from './strategies/google.strategy';
-
-const providers: Array<
-  typeof AuthService | typeof JwtStrategy | typeof GoogleStrategy
-> = [AuthService, JwtStrategy];
-
-if (isGoogleOAuthEnabled()) {
-  providers.push(GoogleStrategy);
-}
 
 @Module({
   imports: [
@@ -28,7 +16,7 @@ if (isGoogleOAuthEnabled()) {
     }),
   ],
   controllers: [AuthController],
-  providers,
+  providers: [AuthService, JwtStrategy],
   exports: [AuthService],
 })
 export class AuthModule {}

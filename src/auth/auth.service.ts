@@ -60,41 +60,6 @@ export class AuthService {
     });
   }
 
-  async loginOrRegisterWithGoogle(profile: {
-    email: string;
-    providerId: string;
-    firstName: string;
-    lastName: string;
-  }): Promise<AuthTokens> {
-    let user = await this.usersService.findByEmail(profile.email);
-
-    if (!user) {
-      await this.usersService.create({
-        email: profile.email,
-        password: `google-${profile.providerId}-${Date.now()}`,
-        firstName: profile.firstName,
-        lastName: profile.lastName,
-      });
-      user = await this.usersService.findByEmail(profile.email);
-    } else if (user.provider !== 'google') {
-      await this.usersService.adminUpdate(user.id, {
-        provider: 'google',
-        providerId: profile.providerId,
-      });
-      user = await this.usersService.findByEmail(profile.email);
-    }
-
-    if (!user) {
-      throw new UnauthorizedException('Failed to process Google user');
-    }
-
-    return this.buildTokens({
-      sub: user.id,
-      email: user.email,
-      role: user.role,
-    });
-  }
-
   async refreshTokens(userId: string): Promise<AuthTokens> {
     const user = await this.usersService.getById(userId);
 

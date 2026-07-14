@@ -39,16 +39,6 @@ export class UpdateUserDto {
   @IsString()
   role?: string;
 
-  @ApiPropertyOptional({ example: 'local' })
-  @IsOptional()
-  @IsString()
-  provider?: string;
-
-  @ApiPropertyOptional({ example: 'provider-id-123' })
-  @IsOptional()
-  @IsString()
-  providerId?: string;
-
   @ApiPropertyOptional({ example: true })
   @IsOptional()
   @IsBoolean()

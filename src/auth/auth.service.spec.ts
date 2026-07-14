@@ -140,45 +140,6 @@ describe('AuthService', () => {
     });
   });
 
-  describe('loginOrRegisterWithGoogle', () => {
-    it('should create a new user when email does not exist', async () => {
-      mockUsersService.findByEmail
-        .mockResolvedValueOnce(null)
-        .mockResolvedValueOnce(mockUser);
-      mockUsersService.create.mockResolvedValue(mockUser);
-      mockJwtService.sign.mockReturnValueOnce('access-token');
-      mockJwtService.sign.mockReturnValueOnce('refresh-token');
-
-      const result = await service.loginOrRegisterWithGoogle({
-        email: 'test@example.com',
-        providerId: 'google-123',
-        firstName: 'John',
-        lastName: 'Doe',
-      });
-
-      expect(mockUsersService.create).toHaveBeenCalled();
-      expect(result.accessToken).toBe('access-token');
-    });
-
-    it('should update provider when user exists with local provider', async () => {
-      mockUsersService.findByEmail
-        .mockResolvedValueOnce({ ...mockUser, provider: 'local' })
-        .mockResolvedValueOnce(mockUser);
-      mockUsersService.adminUpdate.mockResolvedValue(mockUser);
-      mockJwtService.sign.mockReturnValueOnce('access-token');
-      mockJwtService.sign.mockReturnValueOnce('refresh-token');
-
-      await service.loginOrRegisterWithGoogle({
-        email: 'test@example.com',
-        providerId: 'google-123',
-        firstName: 'John',
-        lastName: 'Doe',
-      });
-
-      expect(mockUsersService.adminUpdate).toHaveBeenCalled();
-    });
-  });
-
   describe('refreshTokens', () => {
     it('should return new tokens for valid user', async () => {
       mockUsersService.getById.mockResolvedValue(mockUser);

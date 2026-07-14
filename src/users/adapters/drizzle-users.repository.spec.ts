@@ -11,8 +11,6 @@ const mockUser: IUser = {
   lastName: 'Doe',
   phone: null,
   role: 'user',
-  provider: 'local',
-  providerId: null,
   isActive: true,
   createdAt: new Date(),
   updatedAt: new Date(),

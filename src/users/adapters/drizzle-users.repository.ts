@@ -26,8 +26,6 @@ export class DrizzleUsersRepository implements IUsersRepository {
     lastName: users.lastName,
     phone: users.phone,
     role: users.role,
-    provider: users.provider,
-    providerId: users.providerId,
     isActive: users.isActive,
     createdAt: users.createdAt,
     updatedAt: users.updatedAt,

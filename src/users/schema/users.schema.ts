@@ -9,8 +9,6 @@ export const users = pgTable('users', {
   lastName: text('last_name').notNull(),
   phone: text('phone'),
   role: text('role').notNull().default('user'),
-  provider: text('provider').notNull().default('local'),
-  providerId: text('provider_id'),
   isActive: boolean('is_active').notNull().default(true),
   ...timestampColumns,
 });

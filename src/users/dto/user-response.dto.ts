@@ -5,7 +5,6 @@ export class UserResponseDto {
   lastName: string;
   phone: string | null;
   role: string;
-  provider: string;
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -17,7 +16,6 @@ export class UserResponseDto {
     lastName: string;
     phone: string | null;
     role: string;
-    provider: string;
     isActive: boolean;
     createdAt: Date;
     updatedAt: Date;
@@ -28,7 +26,6 @@ export class UserResponseDto {
     this.lastName = user.lastName;
     this.phone = user.phone;
     this.role = user.role;
-    this.provider = user.provider;
     this.isActive = user.isActive;
     this.createdAt = user.createdAt;
     this.updatedAt = user.updatedAt;
