@@ -170,7 +170,7 @@ describe('DrizzleUsersRepository', () => {
     it('should create a user', async () => {
       const result = await repository.create({
         email: 'test@example.com',
-        password: 'hashed',
+        passwordHash: 'hashed',
         firstName: 'John',
         lastName: 'Doe',
       });
@@ -188,7 +188,7 @@ describe('DrizzleUsersRepository', () => {
       await expect(
         repository.create({
           email: 'test@example.com',
-          password: 'hashed',
+          passwordHash: 'hashed',
           firstName: 'John',
           lastName: 'Doe',
         }),

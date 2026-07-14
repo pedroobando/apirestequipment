@@ -157,7 +157,7 @@ describe('DrizzleEquipmentTypesRepository', () => {
       const pgError = new Error(
         'duplicate key value violates unique constraint',
       );
-      (pgError as { code: string }).code = '23505';
+      (pgError as unknown as { code: string }).code = '23505';
       mockDb.values.mockReturnValue({
         returning: jest.fn().mockRejectedValue(pgError),
       });
@@ -169,7 +169,7 @@ describe('DrizzleEquipmentTypesRepository', () => {
 
     it('should throw BadRequestException on constraint violations', async () => {
       const pgError = new Error('foreign key violation');
-      (pgError as { code: string }).code = '23503';
+      (pgError as unknown as { code: string }).code = '23503';
       mockDb.values.mockReturnValue({
         returning: jest.fn().mockRejectedValue(pgError),
       });
@@ -211,7 +211,7 @@ describe('DrizzleEquipmentTypesRepository', () => {
       const pgError = new Error(
         'duplicate key value violates unique constraint',
       );
-      (pgError as { code: string }).code = '23505';
+      (pgError as unknown as { code: string }).code = '23505';
       mockDb.set.mockReturnValue({
         where: jest.fn().mockReturnValue({
           returning: jest.fn().mockRejectedValue(pgError),
@@ -225,7 +225,7 @@ describe('DrizzleEquipmentTypesRepository', () => {
 
     it('should throw BadRequestException on constraint violations', async () => {
       const pgError = new Error('foreign key violation');
-      (pgError as { code: string }).code = '23503';
+      (pgError as unknown as { code: string }).code = '23503';
       mockDb.set.mockReturnValue({
         where: jest.fn().mockReturnValue({
           returning: jest.fn().mockRejectedValue(pgError),

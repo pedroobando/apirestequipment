@@ -107,7 +107,7 @@ describe('OperatorsController', () => {
     it('should create an operator', async () => {
       const dto: CreateOperatorDto = {
         userId: mockOperator.userId,
-        licenseNumber: mockOperator.licenseNumber,
+        licenseNumber: 'LIC-123',
       };
       mockService.create.mockResolvedValue(mockOperator);
 

@@ -126,7 +126,7 @@ describe('EquipmentService', () => {
       const dto: CreateEquipmentDto = {
         ownerId: mockEquipment.ownerId,
         equipmentTypeId: mockEquipment.equipmentTypeId,
-        plate: mockEquipment.plate,
+        plate: 'ABC-123',
       };
 
       const result = await service.create(dto);
@@ -140,7 +140,7 @@ describe('EquipmentService', () => {
       const dto: CreateEquipmentDto = {
         ownerId: mockEquipment.ownerId,
         equipmentTypeId: mockEquipment.equipmentTypeId,
-        plate: mockEquipment.plate,
+        plate: 'ABC-123',
       };
 
       await expect(service.create(dto)).rejects.toThrow(ConflictException);
@@ -153,7 +153,7 @@ describe('EquipmentService', () => {
       const dto: CreateEquipmentDto = {
         ownerId: mockEquipment.ownerId,
         equipmentTypeId: mockEquipment.equipmentTypeId,
-        plate: mockEquipment.plate,
+        plate: 'ABC-123',
       };
 
       await expect(service.create(dto)).rejects.toThrow(dbError);
@@ -166,7 +166,7 @@ describe('EquipmentService', () => {
       const dto: CreateEquipmentDto = {
         ownerId: mockEquipment.ownerId,
         equipmentTypeId: mockEquipment.equipmentTypeId,
-        plate: mockEquipment.plate,
+        plate: 'ABC-123',
       };
 
       await expect(service.create(dto)).rejects.toThrow('create db error');

@@ -137,7 +137,7 @@ describe('EquipmentController', () => {
       const dto: CreateEquipmentDto = {
         ownerId: mockEquipment.ownerId,
         equipmentTypeId: mockEquipment.equipmentTypeId,
-        plate: mockEquipment.plate,
+        plate: 'ABC123',
       };
       mockService.create.mockResolvedValue(mockEquipment);
 
@@ -151,7 +151,7 @@ describe('EquipmentController', () => {
       const dto: CreateEquipmentDto = {
         ownerId: mockEquipment.ownerId,
         equipmentTypeId: mockEquipment.equipmentTypeId,
-        plate: mockEquipment.plate,
+        plate: 'ABC123',
       };
       mockService.create.mockRejectedValue(
         new ConflictException(
