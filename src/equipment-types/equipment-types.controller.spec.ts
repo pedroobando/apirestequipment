@@ -57,9 +57,7 @@ describe('EquipmentTypesController', () => {
     it('should throw ConflictException when name already exists', async () => {
       const dto: CreateEquipmentTypeDto = { name: mockType.name };
       mockService.create.mockRejectedValue(
-        new ConflictException(
-          `Equipment type "${dto.name}" already exists`,
-        ),
+        new ConflictException(`Equipment type "${dto.name}" already exists`),
       );
 
       await expect(controller.create(dto)).rejects.toThrow(ConflictException);

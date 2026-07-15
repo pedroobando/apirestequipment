@@ -3,7 +3,6 @@ import { ConflictException, NotFoundException } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { USERS_REPOSITORY_TOKEN } from './ports/users.repository';
 import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
 import { IUser } from './interfaces/user.interface';
 import { Role } from 'src/common/enums/role.enum';
 

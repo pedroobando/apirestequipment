@@ -156,6 +156,7 @@ describe('OperatorsController', () => {
 
     it('should be restricted to admin role via Roles decorator metadata', () => {
       const reflector = new Reflector();
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       const handler = OperatorsController.prototype.remove;
       const requiredRoles = reflector.get<Role[] | undefined>(
         ROLES_KEY,

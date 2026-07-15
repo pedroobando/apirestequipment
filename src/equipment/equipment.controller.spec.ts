@@ -273,6 +273,7 @@ describe('EquipmentController', () => {
 
     it('should be restricted to admin role via Roles decorator metadata', () => {
       const reflector = new Reflector();
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       const handler = EquipmentController.prototype.softDelete;
       const requiredRoles = reflector.get<Role[] | undefined>(
         ROLES_KEY,
