@@ -4,10 +4,22 @@
  *   - docs/diagrams/information-flow.excalidraw
  *
  * Run with: pnpm diagrams:generate
+ *
+ * The ER diagram is driven by the actual Drizzle schemas under src/ so it
+ * stays in sync whenever a schema changes. The information-flow diagram
+ * is hand-authored and not schema-driven.
  */
 
 import { writeFileSync, mkdirSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
+import { getTableConfig } from 'drizzle-orm/pg-core';
+import { users } from 'src/users/schema/users.schema';
+import { equipmentTypes } from 'src/equipment-types/schema/equipment-types.schema';
+import { operators } from 'src/operators/schema/operators.schema';
+import { equipment } from 'src/equipment/schema/equipment.schema';
+import { equipmentMaintenance } from 'src/equipment/maintenance/schema/equipment-maintenance.schema';
+import { locations } from 'src/locations/schema/locations.schema';
+import { missions } from 'src/missions/schema/missions.schema';
 
 // ---------- Excalidraw element builders ----------
 
@@ -15,13 +27,11 @@ const NOW = Date.now();
 
 type ExcalidrawElement = Record<string, unknown>;
 
-let counter = 0;
-function nextId(): string {
-  counter += 1;
-  return `el-${Date.now().toString(36)}-${counter}`;
-}
-
-function baseProps(id: string, type: string, extra: Record<string, unknown> = {}): ExcalidrawElement {
+function baseProps(
+  id: string,
+  type: string,
+  extra: Record<string, unknown> = {},
+): ExcalidrawElement {
   return {
     id,
     type,
@@ -81,7 +91,11 @@ function text(
   height: number,
   content: string,
   fontSize: number,
-  opts: Partial<{ color: string; align: 'left' | 'center' | 'right'; weight: 'normal' | 'bold' }> = {},
+  opts: Partial<{
+    color: string;
+    align: 'left' | 'center' | 'right';
+    weight: 'normal' | 'bold';
+  }> = {},
 ): ExcalidrawElement {
   return baseProps(id, 'text', {
     x,
@@ -153,141 +167,144 @@ function writeDiagram(path: string, elements: ExcalidrawElement[]): void {
 
 // ---------- Diagram 1: ER Relationships ----------
 
+// CamelCase → Module name suffix
+function pascalCase(s: string): string {
+  return s
+    .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+    .split(' ')
+    .map((w) => (w ? w.charAt(0).toUpperCase() + w.slice(1) : ''))
+    .join('');
+}
+
+function moduleName(key: string): string {
+  return `${pascalCase(key)}Module`;
+}
+
+// Background color per table — grouped by domain.
+const BG_COLOR: Record<string, string> = {
+  users: '#a5d8ff',
+  equipmentTypes: '#a5d8ff',
+  operators: '#b2f2bb',
+  equipment: '#ffd8a8',
+  equipmentMaintenance: '#ffd8a8',
+  locations: '#b2f2bb',
+  missions: '#b2f2bb',
+};
+
+// Arrow color by onDelete action (matches the legend below).
+const FK_COLOR: Record<string, string> = {
+  cascade: '#1971c2',
+  restrict: '#e8590c',
+  'set null': '#2f9e44',
+};
+
+const SCHEMAS = {
+  users,
+  equipmentTypes,
+  operators,
+  equipment,
+  equipmentMaintenance,
+  locations,
+  missions,
+} as const;
+
+type SchemaKey = keyof typeof SCHEMAS;
+
+type ErTable = {
+  key: SchemaKey;
+  name: string;
+  module: string;
+  fields: string[];
+  bg: string;
+};
+
+type FkLink = {
+  from: string;
+  to: string;
+  label: string;
+  dashed?: boolean;
+  color?: string;
+};
+
+function formatField(
+  col: {
+    name: string;
+    primary: boolean;
+    isUnique: boolean;
+    notNull: boolean;
+  },
+  fkTarget: string | null,
+): string {
+  const annotations: string[] = [];
+  if (col.primary) annotations.push('uuid PK');
+  if (col.isUnique) annotations.push('unique');
+  if (fkTarget) annotations.push(`FK → ${fkTarget}`);
+  let s = col.name;
+  if (annotations.length > 0) s += ` (${annotations.join(', ')})`;
+  if (!col.notNull) s += '?';
+  return s;
+}
+
 function buildErDiagram(): ExcalidrawElement[] {
   const elements: ExcalidrawElement[] = [];
   const W = 280;
   const H = 380;
 
-  // Layout
-  // users (top-left)            equipment_types (top-right)
-  // operators (mid-left)        equipment (center)
-  // locations (bottom-left)     missions (bottom-right)
+  const tables: ErTable[] = (
+    Object.entries(SCHEMAS) as Array<[SchemaKey, (typeof SCHEMAS)[SchemaKey]]>
+  ).map(([key, table]) => {
+    const cfg = getTableConfig(table);
 
-  const positions: Record<string, { x: number; y: number }> = {
-    users: { x: 60, y: 40 },
-    equipment_types: { x: 720, y: 40 },
-    operators: { x: 60, y: 480 },
-    equipment: { x: 420, y: 480 },
-    locations: { x: 60, y: 920 },
-    missions: { x: 720, y: 920 },
-  };
+    const fkByColumn = new Map<string, string>();
+    for (const fk of cfg.foreignKeys) {
+      const ref = fk.reference();
+      const fromCol = ref.columns[0]?.name;
+      const toTableName = (
+        ref.foreignTable as unknown as Record<symbol, string>
+      )[Symbol.for('drizzle:Name')];
+      if (fromCol && toTableName) fkByColumn.set(fromCol, toTableName);
+    }
 
-  const tables: Array<{ key: string; name: string; module: string; fields: string[]; bg: string }> = [
-    {
-      key: 'users',
-      name: 'users',
-      module: 'UsersModule',
-      fields: [
-        'id (uuid PK)',
-        'email (unique)',
-        'password_hash',
-        'first_name',
-        'last_name',
-        'phone?',
-        'role (admin|user)',
-        'provider',
-        'provider_id?',
-        'is_active',
-        'created_at',
-        'updated_at',
-      ],
-      bg: '#a5d8ff',
-    },
-    {
-      key: 'equipment_types',
-      name: 'equipment_types',
-      module: 'EquipmentTypesModule',
-      fields: ['id (uuid PK)', 'name (unique)', 'is_active', 'created_at', 'updated_at'],
-      bg: '#a5d8ff',
-    },
-    {
-      key: 'operators',
-      name: 'operators',
-      module: 'OperatorsModule',
-      fields: [
-        'id (uuid PK)',
-        'user_id (FK → users)',
-        'license_number?',
-        'phone?',
-        'role (driver)',
-        'is_active',
-        'created_at',
-        'updated_at',
-      ],
-      bg: '#b2f2bb',
-    },
-    {
-      key: 'equipment',
-      name: 'equipment',
-      module: 'EquipmentModule',
-      fields: [
-        'id (uuid PK)',
-        'owner_id (FK → users)',
-        'equipment_type_id (FK → equipment_types)',
-        'current_location_id? (FK → locations)',
-        'brand?',
-        'model?',
-        'year?',
-        'plate?',
-        'serial_number?',
-        'fuel_type?',
-        'capacity?',
-        'status',
-        'status_reason?',
-        'origin?',
-        'destination?',
-        'is_active',
-        'created_at',
-        'updated_at',
-      ],
-      bg: '#ffd8a8',
-    },
-    {
-      key: 'locations',
-      name: 'locations',
-      module: 'LocationsModule',
-      fields: [
-        'id (uuid PK)',
-        'equipment_id (FK → equipment)',
-        'latitude',
-        'longitude',
-        'accuracy?',
-        'source',
-        'recorded_at',
-        'created_at',
-        'updated_at',
-      ],
-      bg: '#b2f2bb',
-    },
-    {
-      key: 'missions',
-      name: 'missions',
-      module: 'MissionsModule',
-      fields: [
-        'id (uuid PK)',
-        'user_id_creator (FK → users)',
-        'equipment_id (FK → equipment)',
-        'operator_id? (FK → operators)',
-        'title',
-        'description?',
-        'origin?',
-        'destination?',
-        'status',
-        'started_at?',
-        'completed_at?',
-        'created_at',
-        'updated_at',
-      ],
-      bg: '#b2f2bb',
-    },
-  ];
+    const fields = cfg.columns.map((col) =>
+      formatField(
+        {
+          name: col.name,
+          primary: col.primary,
+          isUnique: col.isUnique,
+          notNull: col.notNull,
+        },
+        fkByColumn.get(col.name) ?? null,
+      ),
+    );
+
+    return {
+      key,
+      name: cfg.name,
+      module: moduleName(key),
+      fields,
+      bg: BG_COLOR[key] ?? '#f1f3f5',
+    };
+  });
+
+  tables.sort((a, b) => a.name.localeCompare(b.name));
+
+  const colXs = [60, 720] as const;
+  const rowH = 440;
+  const positions: Record<string, { x: number; y: number }> = {};
+  const nameToKey: Record<string, string> = {};
+  tables.forEach((t, i) => {
+    positions[t.name] = {
+      x: colXs[i % colXs.length]!,
+      y: 40 + Math.floor(i / colXs.length) * rowH,
+    };
+    nameToKey[t.name] = t.key;
+  });
 
   for (const t of tables) {
-    const p = positions[t.key]!;
+    const p = positions[t.name]!;
     const boxId = `box-${t.key}`;
     elements.push(rect(boxId, p.x, p.y, W, H, t.bg, { roundness: true }));
 
-    // Table name
     const titleH = 28;
     elements.push(
       text(`title-${t.key}`, p.x + 12, p.y + 10, W - 24, titleH, t.name, 20, {
@@ -296,14 +313,21 @@ function buildErDiagram(): ExcalidrawElement[] {
       }),
     );
 
-    // Module subtitle
     elements.push(
-      text(`sub-${t.key}`, p.x + 12, p.y + 36, W - 24, 18, `↳ ${t.module}`, 12, {
-        color: '#5c7c91',
-      }),
+      text(
+        `sub-${t.key}`,
+        p.x + 12,
+        p.y + 36,
+        W - 24,
+        18,
+        `↳ ${t.module}`,
+        12,
+        {
+          color: '#5c7c91',
+        },
+      ),
     );
 
-    // Divider line under title block
     elements.push(
       baseProps(`div-${t.key}`, 'line', {
         x: p.x + 10,
@@ -321,28 +345,46 @@ function buildErDiagram(): ExcalidrawElement[] {
       }),
     );
 
-    // Fields list
     const fieldsY = p.y + 68;
     const lineH = 18;
     t.fields.forEach((f, i) => {
       elements.push(
-        text(`field-${t.key}-${i}`, p.x + 14, fieldsY + i * lineH, W - 24, lineH, f, 13),
+        text(
+          `field-${t.key}-${i}`,
+          p.x + 14,
+          fieldsY + i * lineH,
+          W - 24,
+          lineH,
+          f,
+          13,
+        ),
       );
     });
   }
 
-  // FK arrows
-  type FkLink = { from: string; to: string; label: string; dashed?: boolean; color?: string };
-  const links: FkLink[] = [
-    { from: 'operators', to: 'users', label: 'user_id  →  cascade' },
-    { from: 'equipment', to: 'users', label: 'owner_id  →  cascade', color: '#1971c2' },
-    { from: 'equipment', to: 'equipment_types', label: 'equipment_type_id  →  restrict', color: '#e8590c' },
-    { from: 'equipment', to: 'locations', label: 'current_location_id?  →  set null', dashed: true, color: '#2f9e44' },
-    { from: 'locations', to: 'equipment', label: 'equipment_id  →  cascade', color: '#2f9e44' },
-    { from: 'missions', to: 'users', label: 'user_id_creator  →  restrict', color: '#c92a2a' },
-    { from: 'missions', to: 'equipment', label: 'equipment_id  →  cascade', color: '#2f9e44' },
-    { from: 'missions', to: 'operators', label: 'operator_id?  →  set null', dashed: true, color: '#2f9e44' },
-  ];
+  const links: FkLink[] = [];
+  for (const table of Object.values(SCHEMAS)) {
+    const cfg = getTableConfig(table);
+    const fromTableName = cfg.name;
+    for (const fk of cfg.foreignKeys) {
+      const ref = fk.reference();
+      const fromColName = ref.columns[0]?.name;
+      const fromColInstance = ref.columns[0];
+      const toTableName = (
+        ref.foreignTable as unknown as Record<symbol, string>
+      )[Symbol.for('drizzle:Name')];
+      if (!fromColName || !toTableName || !fromColInstance) continue;
+      const action = fk.onDelete ?? 'no action';
+      const nullable = !fromColInstance.notNull;
+      links.push({
+        from: fromTableName,
+        to: toTableName,
+        label: `${fromColName}${nullable ? '?' : ''}  →  ${action}`,
+        dashed: nullable,
+        color: FK_COLOR[action],
+      });
+    }
+  }
 
   for (const lk of links) {
     const from = positions[lk.from]!;
@@ -353,40 +395,86 @@ function buildErDiagram(): ExcalidrawElement[] {
     const ty = to.y + H / 2;
     const dx = tx - fx;
     const dy = ty - fy;
-    const id = `arr-${lk.from}-${lk.to}`;
-    elements.push(...arrow(id, fx, fy, dx, dy, { color: lk.color, dashed: lk.dashed }));
-    // Label near midpoint
+    const fromKey = nameToKey[lk.from] ?? lk.from;
+    const toKey = nameToKey[lk.to] ?? lk.to;
+    const id = `arr-${fromKey}-${toKey}`;
     elements.push(
-      text(`lbl-${lk.from}-${lk.to}`, fx + dx * 0.35 - 90, fy + dy * 0.35 - 10, 220, 18, lk.label, 12, {
-        color: lk.color ?? '#1e1e1e',
-        align: 'center',
-      }),
+      ...arrow(id, fx, fy, dx, dy, { color: lk.color, dashed: lk.dashed }),
+    );
+    elements.push(
+      text(
+        `lbl-${fromKey}-${toKey}`,
+        fx + dx * 0.35 - 90,
+        fy + dy * 0.35 - 10,
+        220,
+        18,
+        lk.label,
+        12,
+        {
+          color: lk.color ?? '#1e1e1e',
+          align: 'center',
+        },
+      ),
     );
   }
 
-  // Legend (right side, vertically centered against the middle row)
   const legX = 1040;
   const legY = 540;
   const legW = 280;
   const legH = 220;
-  elements.push(rect('legend', legX, legY, legW, legH, '#f1f3f5', { roundness: true }));
-  elements.push(text('legend-title', legX + 12, legY + 10, legW - 24, 22, 'Leyenda — onDelete', 16, { color: '#0b3d91' }));
-  const legendItems: Array<{ color: string; text: string; dashed?: boolean }> = [
-    { color: '#1971c2', text: 'cascade — borra hijos' },
-    { color: '#e8590c', text: 'restrict — bloquea borrado' },
-    { color: '#2f9e44', text: 'set null — limpia FK (dashed = opcional)' },
-  ];
+  elements.push(
+    rect('legend', legX, legY, legW, legH, '#f1f3f5', { roundness: true }),
+  );
+  elements.push(
+    text(
+      'legend-title',
+      legX + 12,
+      legY + 10,
+      legW - 24,
+      22,
+      'Leyenda — onDelete',
+      16,
+      { color: '#0b3d91' },
+    ),
+  );
+  const legendItems: Array<{ color: string; text: string; dashed?: boolean }> =
+    [
+      { color: '#1971c2', text: 'cascade — borra hijos' },
+      { color: '#e8590c', text: 'restrict — bloquea borrado' },
+      { color: '#2f9e44', text: 'set null — limpia FK (dashed = opcional)' },
+    ];
   legendItems.forEach((it, i) => {
     const yy = legY + 42 + i * 28;
-    elements.push(...arrow(`leg-arr-${i}`, legX + 16, yy + 8, 40, 0, { color: it.color, dashed: it.dashed }));
-    elements.push(text(`leg-txt-${i}`, legX + 64, yy, legW - 80, 20, it.text, 13));
+    elements.push(
+      ...arrow(`leg-arr-${i}`, legX + 16, yy + 8, 40, 0, {
+        color: it.color,
+        dashed: it.dashed,
+      }),
+    );
+    elements.push(
+      text(`leg-txt-${i}`, legX + 64, yy, legW - 80, 20, it.text, 13),
+    );
   });
 
-  // Color legend for module groups
   const groupLegY = legY + legH + 24;
   const groupLegH = 140;
-  elements.push(rect('group-legend', legX, groupLegY, legW, groupLegH, '#f1f3f5', { roundness: true }));
-  elements.push(text('group-legend-title', legX + 12, groupLegY + 10, legW - 24, 22, 'Color por módulo', 16, { color: '#0b3d91' }));
+  elements.push(
+    rect('group-legend', legX, groupLegY, legW, groupLegH, '#f1f3f5', {
+      roundness: true,
+    }),
+  );
+  elements.push(
+    text(
+      'group-legend-title',
+      legX + 12,
+      groupLegY + 10,
+      legW - 24,
+      22,
+      'Color por módulo',
+      16,
+      { color: '#0b3d91' },
+    ),
+  );
   const groupItems: Array<{ bg: string; text: string }> = [
     { bg: '#a5d8ff', text: 'Auth-adjunto (users, types)' },
     { bg: '#b2f2bb', text: 'Catálogo / misiones' },
@@ -394,8 +482,12 @@ function buildErDiagram(): ExcalidrawElement[] {
   ];
   groupItems.forEach((it, i) => {
     const yy = groupLegY + 42 + i * 28;
-    elements.push(rect(`grp-sw-${i}`, legX + 16, yy, 40, 18, it.bg, { roundness: false }));
-    elements.push(text(`grp-txt-${i}`, legX + 64, yy, legW - 80, 20, it.text, 13));
+    elements.push(
+      rect(`grp-sw-${i}`, legX + 16, yy, 40, 18, it.bg, { roundness: false }),
+    );
+    elements.push(
+      text(`grp-txt-${i}`, legX + 64, yy, legW - 80, 20, it.text, 13),
+    );
   });
 
   return elements;
@@ -419,39 +511,102 @@ function buildFlowDiagram(): ExcalidrawElement[] {
   };
 
   const steps: Step[] = [
-    { title: '1. Client', note: 'HTTP request (JSON body + Bearer token)', bg: '#a5d8ff' },
-    { title: '2. Express middleware', note: 'Body parsing (JSON), CORS, Helmet', bg: '#a5d8ff' },
-    { title: '3. JwtAuthGuard (global)', note: 'Verifica Bearer token → req.user', bg: '#a5d8ff' },
-    { title: '4. RolesGuard (global)', note: 'Si @Roles, valida role del usuario', bg: '#a5d8ff' },
-    { title: '5. ValidationPipe (global)', note: 'class-validator + class-transformer (whitelist + forbidNonWhitelisted)', bg: '#b2f2bb' },
-    { title: '6. Controller', note: 'Mapea ruta HTTP → service method; aplica DTOs', bg: '#b2f2bb' },
-    { title: '7. Service', note: 'Lógica de negocio envuelta en tryCatch', bg: '#b2f2bb' },
-    { title: '8. Drizzle Repository', note: 'SQL parametrizado vía Drizzle ORM', bg: '#ffd8a8' },
-    { title: '9. PostgreSQL', note: 'Ejecuta query; retorna filas o error de constraint', bg: '#ffd8a8' },
-    { title: '10. Response', note: 'JSON body + status (200/201/400/401/403/404/409/500)', bg: '#d0ebff' },
+    {
+      title: '1. Client',
+      note: 'HTTP request (JSON body + Bearer token)',
+      bg: '#a5d8ff',
+    },
+    {
+      title: '2. Express middleware',
+      note: 'Body parsing (JSON), CORS, Helmet',
+      bg: '#a5d8ff',
+    },
+    {
+      title: '3. JwtAuthGuard (global)',
+      note: 'Verifica Bearer token → req.user',
+      bg: '#a5d8ff',
+    },
+    {
+      title: '4. RolesGuard (global)',
+      note: 'Si @Roles, valida role del usuario',
+      bg: '#a5d8ff',
+    },
+    {
+      title: '5. ValidationPipe (global)',
+      note: 'class-validator + class-transformer (whitelist + forbidNonWhitelisted)',
+      bg: '#b2f2bb',
+    },
+    {
+      title: '6. Controller',
+      note: 'Mapea ruta HTTP → service method; aplica DTOs',
+      bg: '#b2f2bb',
+    },
+    {
+      title: '7. Service',
+      note: 'Lógica de negocio envuelta en tryCatch',
+      bg: '#b2f2bb',
+    },
+    {
+      title: '8. Drizzle Repository',
+      note: 'SQL parametrizado vía Drizzle ORM',
+      bg: '#ffd8a8',
+    },
+    {
+      title: '9. PostgreSQL',
+      note: 'Ejecuta query; retorna filas o error de constraint',
+      bg: '#ffd8a8',
+    },
+    {
+      title: '10. Response',
+      note: 'JSON body + status (200/201/400/401/403/404/409/500)',
+      bg: '#d0ebff',
+    },
   ];
 
   for (let i = 0; i < steps.length; i++) {
     const s = steps[i]!;
     const y = startY + i * (H + gapY);
-    elements.push(rect(`step-${i}`, startX, y, W, H, s.bg, { roundness: true }));
-    elements.push(text(`step-title-${i}`, startX + 12, y + 8, W - 24, 24, s.title, 16, { color: '#0b3d91' }));
-    elements.push(text(`step-note-${i}`, startX + 12, y + 36, W - 24, 36, s.note, 12));
+    elements.push(
+      rect(`step-${i}`, startX, y, W, H, s.bg, { roundness: true }),
+    );
+    elements.push(
+      text(`step-title-${i}`, startX + 12, y + 8, W - 24, 24, s.title, 16, {
+        color: '#0b3d91',
+      }),
+    );
+    elements.push(
+      text(`step-note-${i}`, startX + 12, y + 36, W - 24, 36, s.note, 12),
+    );
   }
 
-  // Down arrows between steps
   for (let i = 0; i < steps.length - 1; i++) {
     const y = startY + (i + 1) * H + i * gapY;
-    elements.push(...arrow(`flow-arr-${i}`, startX + W / 2, y, 0, gapY, { color: '#495057' }));
+    elements.push(
+      ...arrow(`flow-arr-${i}`, startX + W / 2, y, 0, gapY, {
+        color: '#495057',
+      }),
+    );
   }
 
-  // Error path side lane (GlobalExceptionFilter)
   const errX = 80;
   const errY = startY + 4 * (H + gapY) + 20;
   const errW = 240;
   const errH = 200;
-  elements.push(rect('err-filter', errX, errY, errW, errH, '#ffc9c9', { roundness: true }));
-  elements.push(text('err-title', errX + 12, errY + 10, errW - 24, 24, '11. GlobalExceptionFilter', 16, { color: '#c92a2a' }));
+  elements.push(
+    rect('err-filter', errX, errY, errW, errH, '#ffc9c9', { roundness: true }),
+  );
+  elements.push(
+    text(
+      'err-title',
+      errX + 12,
+      errY + 10,
+      errW - 24,
+      24,
+      '11. GlobalExceptionFilter',
+      16,
+      { color: '#c92a2a' },
+    ),
+  );
   elements.push(
     text(
       'err-note',
@@ -464,24 +619,63 @@ function buildFlowDiagram(): ExcalidrawElement[] {
     ),
   );
 
-  // Dashed arrow from step 6 (Controller) to error filter
   const ctrlX = startX;
   const ctrlY = startY + 5 * (H + gapY) + H / 2;
-  elements.push(...arrow('err-arr-ctrl', ctrlX, ctrlY, -(ctrlX - errX - errW), errY + 20 - ctrlY, { color: '#c92a2a', dashed: true }));
-  elements.push(text('err-lbl-ctrl', ctrlX - 220, ctrlY - 30, 200, 18, 'cualquier capa puede lanzar', 11, { color: '#c92a2a' }));
+  elements.push(
+    ...arrow(
+      'err-arr-ctrl',
+      ctrlX,
+      ctrlY,
+      -(ctrlX - errX - errW),
+      errY + 20 - ctrlY,
+      { color: '#c92a2a', dashed: true },
+    ),
+  );
+  elements.push(
+    text(
+      'err-lbl-ctrl',
+      ctrlX - 220,
+      ctrlY - 30,
+      200,
+      18,
+      'cualquier capa puede lanzar',
+      11,
+      { color: '#c92a2a' },
+    ),
+  );
 
-  // Dashed arrow from error filter to response (skipping the rest)
   const respX = startX + W / 2;
   const respY = startY + 9 * (H + gapY);
-  elements.push(...arrow('err-arr-resp', errX + errW, errY + errH / 2, respX - (errX + errW), respY - (errY + errH / 2), { color: '#c92a2a', dashed: true }));
+  elements.push(
+    ...arrow(
+      'err-arr-resp',
+      errX + errW,
+      errY + errH / 2,
+      respX - (errX + errW),
+      respY - (errY + errH / 2),
+      { color: '#c92a2a', dashed: true },
+    ),
+  );
 
-  // Legend bottom
   const legX = 80;
   const legY = startY + 10 * (H + gapY) + 40;
   const legW = 880;
   const legH = 70;
-  elements.push(rect('flow-legend', legX, legY, legW, legH, '#f1f3f5', { roundness: true }));
-  elements.push(text('flow-legend-title', legX + 12, legY + 8, legW - 24, 22, 'Leyenda de colores', 14, { color: '#0b3d91' }));
+  elements.push(
+    rect('flow-legend', legX, legY, legW, legH, '#f1f3f5', { roundness: true }),
+  );
+  elements.push(
+    text(
+      'flow-legend-title',
+      legX + 12,
+      legY + 8,
+      legW - 24,
+      22,
+      'Leyenda de colores',
+      14,
+      { color: '#0b3d91' },
+    ),
+  );
   const legend: Array<{ color: string; text: string }> = [
     { color: '#a5d8ff', text: 'HTTP / Auth' },
     { color: '#b2f2bb', text: 'Validación / Negocio' },
@@ -491,8 +685,12 @@ function buildFlowDiagram(): ExcalidrawElement[] {
   legend.forEach((it, i) => {
     const xx = legX + 16 + i * 210;
     const yy = legY + 36;
-    elements.push(rect(`flow-leg-sw-${i}`, xx, yy, 24, 16, it.color, { roundness: false }));
-    elements.push(text(`flow-leg-txt-${i}`, xx + 32, yy - 2, 180, 20, it.text, 13));
+    elements.push(
+      rect(`flow-leg-sw-${i}`, xx, yy, 24, 16, it.color, { roundness: false }),
+    );
+    elements.push(
+      text(`flow-leg-txt-${i}`, xx + 32, yy - 2, 180, 20, it.text, 13),
+    );
   });
 
   return elements;
@@ -503,9 +701,17 @@ function buildFlowDiagram(): ExcalidrawElement[] {
 const ROOT = resolve(__dirname, '..');
 
 const erElements = buildErDiagram();
-writeDiagram(resolve(ROOT, 'docs/diagrams/er-relationships.excalidraw'), erElements);
+writeDiagram(
+  resolve(ROOT, 'docs/diagrams/er-relationships.excalidraw'),
+  erElements,
+);
 
 const flowElements = buildFlowDiagram();
-writeDiagram(resolve(ROOT, 'docs/diagrams/information-flow.excalidraw'), flowElements);
+writeDiagram(
+  resolve(ROOT, 'docs/diagrams/information-flow.excalidraw'),
+  flowElements,
+);
 
-console.log('\nDone. Open the .excalidraw files in Obsidian or excalidraw.com.');
+console.log(
+  '\nDone. Open the .excalidraw files in Obsidian or excalidraw.com.',
+);
