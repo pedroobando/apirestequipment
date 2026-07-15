@@ -59,3 +59,8 @@ report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 /.atl/
 /.hermes/
 /scripts/.seeded-equipment-state.json
+
+# Generated Excalidraw diagrams (output of `pnpm diagrams:generate`).
+# The .excalidraw files contain random `seed` values that change every
+# run, so committing them produces noisy diffs. Regenerate locally.
+/docs/diagrams/
