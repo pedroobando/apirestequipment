@@ -1,6 +1,9 @@
 import { drizzle, NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
 import { equipmentTypes } from 'src/equipment-types/schema/equipment-types.schema';
+import { loadEnv } from './load-env';
+
+loadEnv();
 
 const seedEquipmentTypes = [
   { name: 'Ambulancia' },

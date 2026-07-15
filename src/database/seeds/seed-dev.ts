@@ -1,6 +1,7 @@
 import { drizzle, NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
 import { eq } from 'drizzle-orm';
+import * as readline from 'node:readline';
 import bcrypt from 'bcrypt';
 import { users } from 'src/users/schema/users.schema';
 import { operators } from 'src/operators/schema/operators.schema';
@@ -10,28 +11,8 @@ import { locations } from 'src/locations/schema/locations.schema';
 import { missions, MissionStatus } from 'src/missions/schema/missions.schema';
 import { Role } from 'src/common/enums/role.enum';
 import { EquipmentStatus } from 'src/common/enums/equipment-status.enum';
-import { readFileSync } from 'fs';
-import { resolve } from 'path';
-
-function loadEnv() {
-  try {
-    const envPath = resolve(process.cwd(), '.env');
-    const content = readFileSync(envPath, 'utf-8');
-    for (const line of content.split('\n')) {
-      const trimmed = line.trim();
-      if (!trimmed || trimmed.startsWith('#')) continue;
-      const [key, ...valueParts] = trimmed.split('=');
-      if (key && valueParts.length > 0) {
-        const value = valueParts.join('=').trim();
-        if (!Object.prototype.hasOwnProperty.call(process.env, key)) {
-          process.env[key] = value;
-        }
-      }
-    }
-  } catch {
-    // ignore missing .env
-  }
-}
+import { OperatorRole } from 'src/common/enums/operator-role.enum';
+import { loadEnv } from './load-env';
 
 loadEnv();
 
@@ -57,6 +38,46 @@ function assertDefined<T>(value: T | undefined, name: string): T {
   return value;
 }
 
+/**
+ * The seed is destructive: it wipes every table before reseeding. To avoid
+ * silent data loss we require an explicit confirmation, mirroring the
+ * pattern in `scripts/wipe-database.ts`:
+ *   - `CONFIRM_DEV_SEED_WIPE=1` in the env (for CI / scripted runs)
+ *   - or an interactive `yes` prompt when stdin is a TTY
+ * In any other case the seed aborts with a clear message.
+ */
+async function confirmDestructiveSeed(): Promise<boolean> {
+  if (process.env['CONFIRM_DEV_SEED_WIPE'] === '1') {
+    return true;
+  }
+
+  if (!process.stdin.isTTY) {
+    console.error(
+      'Refusing to wipe: this seed is destructive. Re-run with CONFIRM_DEV_SEED_WIPE=1 ' +
+        'or interactively from a terminal to confirm.',
+    );
+    return false;
+  }
+
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout,
+  });
+
+  try {
+    const answer = await new Promise<string>((resolveAnswer) => {
+      rl.question(
+        'This will DELETE ALL existing rows in the dev database. ' +
+          'Type YES to continue: ',
+        (response) => resolveAnswer(response.trim()),
+      );
+    });
+    return answer === 'YES';
+  } finally {
+    rl.close();
+  }
+}
+
 async function main() {
   const connectionString = process.env['DATABASE_URL'];
 
@@ -66,6 +87,12 @@ async function main() {
 
   const pool = new Pool({ connectionString });
   const db: NodePgDatabase = drizzle(pool);
+
+  const confirmed = await confirmDestructiveSeed();
+  if (!confirmed) {
+    await pool.end();
+    process.exit(0);
+  }
 
   try {
     await db.delete(missions);
@@ -90,7 +117,7 @@ async function main() {
           passwordHash: adminPasswordHash,
           firstName: 'administrador',
           lastName: 'Ingallina',
-          phone: 'p4qr-343.345.32',
+          phone: '+584143433453',
           role: Role.Admin,
         },
         {
@@ -132,13 +159,13 @@ async function main() {
           userId: operatorUser1.id,
           licenseNumber: 'LIC-001',
           phone: '04121234567',
-          role: 'driver',
+          role: OperatorRole.Driver,
         },
         {
           userId: operatorUser2.id,
           licenseNumber: 'LIC-002',
           phone: '04261234567',
-          role: 'technician',
+          role: OperatorRole.Mechanic,
         },
       ])
       .returning();
